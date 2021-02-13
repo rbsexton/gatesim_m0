@@ -26,7 +26,6 @@
 // Abstract : Testbench for the Cortex-M0 example system
 //-----------------------------------------------------------------------------
 //
-`timescale 1ns/1ps
 `include "cmsdk_mcu_defs.v"
 
 module tb_cmsdk_mcu;
@@ -145,6 +144,19 @@ module tb_cmsdk_mcu;
 
   // Format for time reporting
   initial    $timeformat(-9, 0, " ns", 0);
+    
+  initial begin 
+  
+    begin
+    $dumpfile("u_cmsdk_mcu");
+    $dumpvars(0,u_cmsdk_mcu);
+    end
+
+      
+    #1000;
+    
+    $finish;
+    end 
 
   
 endmodule

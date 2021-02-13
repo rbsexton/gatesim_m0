@@ -26,7 +26,6 @@
 // Abstract : Top level for Cortex-M0 DesignStart Eval RTL example
 //-----------------------------------------------------------------------------
 //
-
 `include "cmsdk_mcu_defs.v"
 
 module cmsdk_mcu #(
@@ -35,7 +34,7 @@ module cmsdk_mcu #(
 
   parameter BE              = 0,   // Big or little endian
   parameter BKPT            = 4,   // Number of breakpoint comparators
-  parameter DBG             = 1,   // Debug configuration
+  parameter DBG             = 0,   // Debug configuration
   parameter NUMIRQ          = 32,  // NUM of IRQ
   parameter SMUL            = 0,   // Multiplier configuration
   parameter SYST            = 1,   // SysTick
@@ -55,7 +54,10 @@ module cmsdk_mcu #(
   input  wire          TDI,
   output wire          TDO,
   inout  wire          SWDIOTMS,
-  input  wire          SWCLKTCK);
+  input  wire          SWCLKTCK,
+  
+  output wire [31:0]   HADDR_mon
+  );
 
 
 //------------------------------------
@@ -147,6 +149,8 @@ module cmsdk_mcu #(
   wire               TESTMODE;
 
   assign TESTMODE = 1'b0;
+  
+  assign HADDR_mon = HADDR;
 
 //----------------------------------------
 // Clock and reset controller
@@ -313,7 +317,7 @@ assign   HCLKSYS  = HCLK;
 // Flash memory
 //----------------------------------------
 cmsdk_ahb_rom
-  #(.MEM_TYPE(1'b1),
+  #(.MEM_TYPE(1),
     .AW(16),  // 64K bytes flash ROM
     .filename("image.hex"),
     .WS_N(`ARM_CMSDK_ROM_MEM_WS_N),
@@ -411,6 +415,33 @@ cmsdk_ahb_ram
     .TDO              (TDO)     // Not needed if serial-wire debug is used
 
   );
+
+
+// ------------------------------------------------
+// Publish the address bus to verilator.
+// `ifdef verilator
+//   function [31:0] get_haddr;
+//      // verilator public
+//      get_haddr = HADDR;
+//   endfunction // get_haddr
+// `endif
+
+
+
+// --------------------------------------------------------------------
+// Simulation with Vare-ilator, the simulator that must not be named
+// because it'll think you're talking to it. 
+// --------------------------------------------------------------------
+
+`ifdef verilator  
+  initial begin
+         $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
+         $dumpfile("cmsdk_mcu.vcd");
+         $dumpvars();
+      end
+`endif  
+  
+  
 
 endmodule
 
