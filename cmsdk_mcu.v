@@ -435,8 +435,8 @@ cmsdk_ahb_ram
 
 `ifdef verilator  
   initial begin
-         $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
-         $dumpfile("cmsdk_mcu.vcd");
+         $display("[%0t] Tracing to cmsdk_mcu_verilator.vcd...\n", $time);
+         $dumpfile("cmsdk_mcu_verilator.vcd");
          $dumpvars();
       end
 `endif  
