@@ -148,12 +148,12 @@ module tb_cmsdk_mcu;
   initial begin 
   
     begin
-    $dumpfile("u_cmsdk_mcu");
+    $dumpfile("tb_cmsdk_mcu_iverilog");
     $dumpvars(0,u_cmsdk_mcu);
     end
 
       
-    #1000;
+    #50000;
     
     $finish;
     end 

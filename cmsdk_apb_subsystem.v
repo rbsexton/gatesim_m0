@@ -46,11 +46,11 @@ module cmsdk_apb_subsystem #(
 
   // Parameter options for including peripherals
   parameter  INCLUDE_APB_TIMER0     = 1,  // Include simple timer #0
-  parameter  INCLUDE_APB_TIMER1     = 1,  // Include simple timer #1
+  parameter  INCLUDE_APB_TIMER1     = 0,  // Include simple timer #1
   parameter  INCLUDE_APB_DUALTIMER0 = 1,  // Include dual timer module
-  parameter  INCLUDE_APB_UART0      = 1,  // Include simple UART #0
-  parameter  INCLUDE_APB_UART1      = 1,  // Include simple UART #1
-  parameter  INCLUDE_APB_UART2      = 1,  // Include simple UART #2.
+  parameter  INCLUDE_APB_UART0      = 0,  // Include simple UART #0
+  parameter  INCLUDE_APB_UART1      = 0,  // Include simple UART #1
+  parameter  INCLUDE_APB_UART2      = 0,  // Include simple UART #2.
                                           // Note : UART #2 is required for text messages
                                           //        display and to enable debug tester in
                                           //        debug tests
@@ -145,10 +145,21 @@ module cmsdk_apb_subsystem #(
   input  wire           timer0_extin,
   input  wire           timer1_extin,
 
+  // Host Communications FIFO 
+  input  wire            hostcommfifo_h2d_write,
+  input  wire  [7:0]     hostcommfifo_h2d_data,
+  output wire            hostcommfifo_host_not_full,
+  
+  
+  output wire            hostcommfifo_d2h_host_not_empty,
+  input wire             hostcommfifo_d2h_host_rd,
+  output wire  [7:0]     hostcommfifo_d2hhost_data,
+
   // Interrupt outputs
   output wire   [31:0]  apbsubsys_interrupt,
   output wire           watchdog_interrupt,
   output wire           watchdog_reset);
+
 
   // --------------------------------------------------------------------------
   // Internal wires
@@ -206,6 +217,11 @@ module cmsdk_apb_subsystem #(
   wire     [31:0]  test_slave_prdata;
   wire             test_slave_pready;
   wire             test_slave_pslverr;
+
+  wire             commfifo_psel;
+  wire     [31:0]  commfifo_prdata;
+  wire             commfifo_pready;
+  wire             commfifo_pslverr;
 
   wire             psel3;
   wire             psel7;
@@ -343,7 +359,7 @@ module cmsdk_apb_subsystem #(
     .PORT0_ENABLE  (INCLUDE_APB_TIMER0), // timer 0
     .PORT1_ENABLE  (INCLUDE_APB_TIMER1), // timer 1
     .PORT2_ENABLE  (INCLUDE_APB_DUALTIMER0), // dual timer 0
-    .PORT3_ENABLE  (0), // not used
+    .PORT3_ENABLE  (1), // not used
     .PORT4_ENABLE  (INCLUDE_APB_UART0), // uart 0
     .PORT5_ENABLE  (INCLUDE_APB_UART1), // uart 1
     .PORT6_ENABLE  (INCLUDE_APB_UART2), // uart 2
@@ -377,10 +393,10 @@ module cmsdk_apb_subsystem #(
     .PRDATA2           (dualtimer2_prdata),
     .PSLVERR2          (dualtimer2_pslverr),
 
-    .PSEL3             (psel3),
-    .PREADY3           (1'b1),
-    .PRDATA3           (32'h00000000),
-    .PSLVERR3          (1'b0),
+    .PSEL3             (commfifo_psel),
+    .PREADY3           (commfifo_pready),
+    .PRDATA3           (commfifo_prdata),
+    .PSLVERR3          (commfifo_pslverr),
 
     .PSEL4             (uart0_psel),
     .PREADY4           (uart0_pready),
@@ -908,6 +924,36 @@ module cmsdk_apb_subsystem #(
 
   assign watchdog_interrupt = i_watchdog_int;
   assign watchdog_reset     = i_watchdog_rst;
+
+
+  // ------------------------------------------------------------
+  // Communications FIFO
+  // ------------------------------------------------------------
+
+  commfifo u_commfifo(
+    .PCLK              (PCLKG),    // use Gated PCLK for bus
+    .PRESETn           (PRESETn),  // Reset
+
+    .PSEL              (commfifo_psel),      // APB interface inputs
+    .PADDR             (i_paddr[11:2]),
+    .PENABLE           (i_penable),
+    .PWRITE            (i_pwrite),
+    .PWDATA            (i_pwdata),
+
+    .PRDATA            (commfifo_prdata),   // APB interface outputs
+    .PREADY            (commfifo_pready),
+    .PSLVERR           (commfifo_pslverr),
+    
+    // USER PORTS
+    
+    .h2d_host_write    (hostcommfifo_h2d_write),
+    .h2d_dut_din       (hostcommfifo_h2d_data),
+    .h2d_host_not_full (hostcommfifo_host_not_full),
+
+    .d2h_host_not_empty(hostcommfifo_d2h_host_not_empty),
+    .d2h_host_rd       (hostcommfifo_d2h_host_rd),
+    .d2h_host_data     (hostcommfifo_d2hhost_data)
+    );
 
  `ifdef ARM_APB_ASSERT_ON
    // ------------------------------------------------------------
