@@ -2,8 +2,8 @@ run: obj_dir/Vcmsdk_mcu
 	obj_dir/Vcmsdk_mcu +trace | head -100
 
 obj_dir/Vcmsdk_mcu: ../cmsdk_mcu.v sim_main.cpp
-	verilator -Wall -Wno-fatal --trace \
-	--cc cmsdk_mcu.v --exe sim_main.cpp \
+	verilator -Wall -Wno-fatal --trace --vpi \
+	--cc cmsdk_mcu.v commfifo_apb.v  --exe sim_main.cpp \
 	-I..  \
 	-I../AT510-MN-80001-r2p0-00rel0/systems/cortex_m0_mcu/verilog \
 	-I../AT510-MN-80001-r2p0-00rel0/logical/models/memories \
