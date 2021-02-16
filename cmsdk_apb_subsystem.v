@@ -146,9 +146,9 @@ module cmsdk_apb_subsystem #(
   input  wire           timer1_extin,
 
   // Host Communications FIFO 
-  input  wire            hostcommfifo_h2d_write,
-  input  wire  [7:0]     hostcommfifo_h2d_data,
-  output wire            hostcommfifo_host_not_full,
+  // input  wire            hostcommfifo_h2d_wr,
+  // input  wire  [7:0]     hostcommfifo_h2d_data,
+  // output wire            hostcommfifo_host_not_full,
   
   
   output wire            hostcommfifo_d2h_host_not_empty,
@@ -930,7 +930,7 @@ module cmsdk_apb_subsystem #(
   // Communications FIFO
   // ------------------------------------------------------------
 
-  commfifo u_commfifo(
+  commfifo_apb u_commfifo(
     .PCLK              (PCLKG),    // use Gated PCLK for bus
     .PRESETn           (PRESETn),  // Reset
 
@@ -938,21 +938,21 @@ module cmsdk_apb_subsystem #(
     .PADDR             (i_paddr[11:2]),
     .PENABLE           (i_penable),
     .PWRITE            (i_pwrite),
-    .PWDATA            (i_pwdata),
+    .PWDATA            (i_pwdata[7:0]),
 
     .PRDATA            (commfifo_prdata),   // APB interface outputs
     .PREADY            (commfifo_pready),
-    .PSLVERR           (commfifo_pslverr),
+    .PSLVERR           (commfifo_pslverr)
     
     // USER PORTS
     
-    .h2d_host_write    (hostcommfifo_h2d_write),
-    .h2d_dut_din       (hostcommfifo_h2d_data),
-    .h2d_host_not_full (hostcommfifo_host_not_full),
+    //.h2d_host_wr       (hostcommfifo_h2d_wr),
+    //.h2d_dut_din       (hostcommfifo_h2d_data),
+    //.h2d_host_not_full (hostcommfifo_host_not_full),
 
-    .d2h_host_not_empty(hostcommfifo_d2h_host_not_empty),
-    .d2h_host_rd       (hostcommfifo_d2h_host_rd),
-    .d2h_host_data     (hostcommfifo_d2hhost_data)
+    //.d2h_host_not_empty(hostcommfifo_d2h_host_not_empty),
+    //.d2h_host_rd       (hostcommfifo_d2h_host_rd),
+    //.d2h_host_data     (hostcommfifo_d2hhost_data)
     );
 
  `ifdef ARM_APB_ASSERT_ON

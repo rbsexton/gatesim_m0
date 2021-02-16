@@ -14,7 +14,7 @@
 //
 // These are two 'WRITE' ufifos.
 
-module commfifo(
+module commfifo_apb(
   // IO declaration
   input  wire                    PCLK,     // clock
   input  wire                    PRESETn,  // reset
@@ -24,23 +24,25 @@ module commfifo(
   input  wire [11:2]             PADDR,
   input  wire                    PENABLE,
   input  wire                    PWRITE,
-  input  wire [31:0]             PWDATA,
+  input  wire [7:0]             PWDATA,
 
   // APB interface outputs
   output wire  [31:0]            PRDATA,
   output wire                    PREADY,
-  output wire                    PSLVERR,
-  
-  // Upstream Ports 
-  output wire            d2h_host_not_empty,
-  input  wire            d2h_host_rd,
-  output wire  [7:0]     d2h_host_data,
-
-  input  wire            h2d_host_write,
-  input  wire  [7:0]     h2d_dut_din,
-  input  wire            h2d_host_not_full
+  output wire                    PSLVERR
 
   );
+
+  // These are not published ports.  They exist to interface with 
+  // Cosimulation routines. 
+  reg             d2h_host_rd            /*verilator public_flat_rw @(posedge PCLK) */;
+  wire  [7:0]     d2h_host_data          /*verilator public_flat_rd*/ ;
+  wire            d2h_host_not_empty     /*verilator public_flat_rd*/ ;
+
+  reg             h2d_host_wr            /*verilator public_flat_rw @(posedge PCLK) */;
+  reg       [7:0] h2d_dut_din            /*verilator public_flat_rw @(posedge PCLK) */;
+  wire            h2d_host_not_full      /*verilator public_flat_rd*/;
+
 
 //------------------------------------------------------------------------------
 // internal wires
@@ -55,8 +57,7 @@ module commfifo(
   wire [15:0] d2h_status;
   wire        d2h_wr;
   wire        d2h_err;
-  wire        d2h_empty_n;
-
+  
 // --------------------------------------------------------------------
 // Instantiate FIFOs
 // --------------------------------------------------------------------
@@ -67,7 +68,7 @@ ufifo #( .BW(8),
     .RXFIFO(0) ) 
   commfifo_h2d ( .i_clk(PCLK), .i_reset(!PRESETn),
     
-    .i_wr     (h2d_host_write),
+    .i_wr     (h2d_host_wr),
     .i_data   (h2d_dut_din),
     .o_empty_n(h2d_empty_n),
     
@@ -86,7 +87,7 @@ ufifo #( .BW(8),
     
     .i_wr     (d2h_wr),   
     .i_data   (PWDATA[7:0]), 
-    .o_empty_n(d2h_empty_n),  
+    .o_empty_n(d2h_host_not_empty),  
     
     .i_rd     (d2h_host_rd),
     .o_data   (d2h_host_data),
@@ -94,6 +95,8 @@ ufifo #( .BW(8),
     .o_err    (d2h_err)
 
   );
+
+assign h2d_host_not_full = h2d_status[0];
 
 //------------------------------------------------------------------------------
 // Main code
@@ -119,5 +122,46 @@ assign PRDATA  = (PSEL & PENABLE & (~PWRITE)) ? read_data_mux : {32{1'b0}};
 // Always ready, never an error.
 assign PSLVERR = 1'b0;
 assign PREADY  = 1'b1;
+
+// ------------------------------------------------------------------
+// Integration with Veri lator 
+
+// ------------------------------------------------
+// veril ator public
+// Publish the interface signals.
+//`ifdef verilator
+
+  // The DUT to Host interface.
+
+//   function [0:0] get_d2h_host_not_empty;
+//      get_d2h_host_not_empty = d2h_host_not_empty;
+//   endfunction // get_d2h_host_not_empty
+
+//   function [7:0] get_d2h_host_data;
+//      get_d2h_host_data = d2h_host_data;
+//    endfunction // get_d2h_host_data
+      
+//   function void set_d2h_host_rd;
+//      input data;
+      
+//      d2h_host_rd = data;
+//   endfunction // set_d2h_host_rd
+
+   // Host to DUT 
+//   function [0:0] get_h2d_host_not_full;
+//      get_h2d_host_not_full = h2d_host_not_full;
+//   endfunction // get_h2d_host_not_full
+//   
+//   function void set_h2d_host_data;
+//      input [7:0] data; 
+//      h2d_dut_din = data;
+//    endfunction // set_h2d_host_data
+//      
+//   function void set_h2d_host_wr;
+//      input data;
+//      h2d_host_wr = data;
+//   endfunction // set_h2d_host_wr
+//`endif
+
 
 endmodule
