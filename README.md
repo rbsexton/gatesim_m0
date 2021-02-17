@@ -5,7 +5,7 @@
 - ARM Cortex-M0 Designstart files.  This project was originally 
 built with *AT510-MN-80001-r2p0-00rel0*.   The default project 
 from ARM includes a few peripherals and loads *image.hex* into 
-memory at address 0x9.
+memory at address 0x0.
 - image.hex file with your binary for execution.  One byte per line, in hex:
 ```
 80
@@ -23,7 +23,7 @@ hexdump -v -e '1/0 "" 1/1 "%02x" 1/0 "\n"' binary.bin
 - cd to *sim* and run *make* 
 - From the top level directory, run *./sim/obj_dir/Vcmsdk_mcu*.   The simulator 
 will ingest the image.hex file and run.    It will produce a *cmsdk_mcu.vcd* file that 
-you can inspect with gtkWave.   
+you can inspect with gtkWave.      The distribution includes a basic MPE Forth image.
 - 
 
 The *./sim* directory contains a makefile to verilate the project into c++ and 
