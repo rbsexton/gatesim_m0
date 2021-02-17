@@ -80,13 +80,14 @@ ufifo #( .BW(8),
 
 
 // The DUT 2 Host FIFO
+// and the input with PSEL so that its easier to work with the traces.
 ufifo #( .BW(8),
     .LGFLEN(6), // Log FIFO Length.   
     .RXFIFO(0) )
   commfifo_d2h ( .i_clk(PCLK), .i_reset(!PRESETn),
     
     .i_wr     (d2h_wr),   
-    .i_data   (PWDATA[7:0]), 
+    .i_data   (PWDATA[7:0] & {8{PSEL}} ), 
     .o_empty_n(d2h_host_not_empty),  
     
     .i_rd     (d2h_host_rd),

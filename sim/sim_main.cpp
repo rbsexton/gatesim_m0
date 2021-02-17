@@ -23,8 +23,9 @@ double sc_time_stamp() {
 int main(int argc, char **argv, char **env)
 {
 
-      // Verilator must compute traced signals
-      Verilated::traceEverOn(true);
+      // Verilator must compute traced signals.
+      // This needs to be done with argv/argc
+      // Verilated::traceEverOn(true);
 
       // Pass arguments so Verilated code can see them, e.g. $value$plusargs
       // This needs to be called before you create any model
@@ -48,23 +49,37 @@ int main(int argc, char **argv, char **env)
       p.fd = 0; // stdin 
       p.events = POLLIN;        
 
-      while (!Verilated::gotFinish() && main_time < 10000 ) {
+      // First Loop - Apply Reset for a few clocks. 
+      bool reset_active = true; 
+      
+      while (!Verilated::gotFinish() && reset_active) {
+        main_time++;  // Time passes...
+
+        // Toggle a fast (time/2 period) clock
+        top->XTAL1 = !top->XTAL1;
+
+        // Evaluate model
+        top->eval();     
+
+        // Toggle control signals on an edge that doesn't correspond
+        // to where the controls are sampled; in this example we do
+        // this only on a negedge of clk, because we know
+        // reset is not sampled there.
+        if (!top->XTAL1 && main_time > 5) {
+             top->NRST = !0;  // Deassert reset
+             reset_active = false; // Done with reset phase.
+           }
+        }
+
+      // We have direct access to the CPU RXEV IO.   Unlike WFI, 
+      // WFE can be triggered by an IO.   So it should be possible 
+      // sleep the emulated device and not burn simulation cycles while 
+      // waiting for user IO.   
+      while (!Verilated::gotFinish() && main_time < 200000 ) {
            main_time++;  // Time passes...
 
            // Toggle a fast (time/2 period) clock
            top->XTAL1 = !top->XTAL1;
-
-           // Toggle control signals on an edge that doesn't correspond
-           // to where the controls are sampled; in this example we do
-           // this only on a negedge of clk, because we know
-           // reset is not sampled there.
-           if (!top->XTAL1) {
-              if (main_time > 1 && main_time < 5) {
-                    top->NRST = !1;  // Assert reset
-                } else {
-                    top->NRST = !0;  // Deassert reset
-                }
-           }
            
            // Evaluate model
            top->eval();
@@ -96,8 +111,10 @@ int main(int argc, char **argv, char **env)
            } // Read data state machine.
 
            // Data from stdin.
+           // Forth will purge the incoming serial data, so don't send anything 
+           // too soon.   This needs something better.
            {
-             if ( ( main_time > 100 ) && top->XTAL1 ) {
+             if ( ( main_time > 110000 ) && top->XTAL1 ) {
                 if (  write_state == 1 ) { // De-assert the write strobe 
                   top->cmsdk_mcu__DOT__u_cmsdk_mcu_system__DOT__u_apb_subsystem__DOT__u_commfifo__DOT__h2d_host_wr = 0;
                   write_state = 0;
