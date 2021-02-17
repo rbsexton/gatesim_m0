@@ -2457,7 +2457,7 @@ external
   cr .free                              \ display free space
   cr cr ."   ok"			\ display prompt
   s0 @ sp!                              \ reset data stack
-[ 32bit? ] [if]  FlushKeys  [then]	\ flush UART input
+\ [ 32bit? ] [if]  FlushKeys  [then]	\ flush UART input
   quit                                  \ start text interpreter
 ;
 make-turnkey cold                       \ Default start-up word.

@@ -112,9 +112,10 @@ int main(int argc, char **argv, char **env)
 
            // Data from stdin.
            // Forth will purge the incoming serial data, so don't send anything 
-           // too soon.   This needs something better.
+           // too soon.   This needs something better.   Solved 
+           // Update the CLD1 code so that it doesn't call FLUSHKEYS
            {
-             if ( ( main_time > 110000 ) && top->XTAL1 ) {
+             if ( top->XTAL1 ) {
                 if (  write_state == 1 ) { // De-assert the write strobe 
                   top->cmsdk_mcu__DOT__u_cmsdk_mcu_system__DOT__u_apb_subsystem__DOT__u_commfifo__DOT__h2d_host_wr = 0;
                   write_state = 0;
